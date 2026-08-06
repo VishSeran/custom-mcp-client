@@ -2,6 +2,7 @@ import os
 import dotenv
 
 from langchain_groq import ChatGroq
+from langchain.agents import create_agent
 from langgraph.checkpoint.memory import InMemorySaver
 
 from configurations.logger import get_logger
@@ -50,7 +51,18 @@ class LLMAgent:
                 }
             }
             
-            self.agent
+            self.agent = create_agent(
+                model=chat_groq,
+                tools=tools,
+                checkpointer=checkpointer,
+                system_prompt="""
+                            You are a useful AI agent.
+                            You have access to the tools that provided.
+                            Use the relevant tools if needed when answering the user questions.
+                """
+            )
+            
+            logger.info("LLM Agent initiated!!!")
                         
         except ValueError as e:
             logger.error(f"Value Error: {e}")
