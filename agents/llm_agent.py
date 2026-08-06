@@ -65,9 +65,9 @@ class LLMAgent:
             logger.info("LLM Agent initiated!!!")
                         
         except ValueError as e:
-            logger.error(f"Value Error: {e}")
+            logger.error(f"Value Error in llm agent: {e}")
             raise
             
         except Exception as e:
-            logger.error(f"Error in get realtive path: {e}")
+            logger.error(f"Error in llm agent initialization: {e}")
             raise
