@@ -3,6 +3,7 @@ from datetime import datetime
 from fastmcp import Context
 
 from mcp_server.server import server
+from schema.document import DocumentGenerator
 
 from configurations.config import get_realtive_path, base_dir
 
@@ -153,6 +154,17 @@ async def read_root_dir(ctx:Context):
 async def document_generator(ctx:Context):
     
     try:
+        
+        result = await ctx.elicit(
+            message="Please give the file path and file name",
+            response_type=DocumentGenerator
+        )
+        
+        file_path = result.data.file_path
+        path = get_realtive_path(file_path)
+        file_name = result.data.file_name
+        
+        
         
     except Exception as e:
         await ctx.error(f"Error in document generator: {e}")
