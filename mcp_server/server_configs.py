@@ -1,8 +1,10 @@
+from datetime import datetime
+
 from fastmcp import Context
 
 from mcp_server.server import server
 
-from configurations.config import get_realtive_path
+from configurations.config import get_realtive_path, base_dir
 
 @server.tool()
 async def write_file(file_path:str,content:str, ctx:Context):
@@ -84,6 +86,13 @@ async def delete_file(file_path:str, ctx:Context):
 @server.resource("file:///{file_name}")  
 async def read_file_from_resources(file_name:str, ctx:Context) -> dict:
     
+    """read a file from mcp server resources. this function provides operation to access a paticular file
+    using its path to retrieve its content
+
+    Returns:
+        _type_: _description_
+    """
+    
     try:
         
         path = get_realtive_path(file_name)
@@ -101,5 +110,41 @@ async def read_file_from_resources(file_name:str, ctx:Context) -> dict:
         
     except Exception as e:
         await ctx.error(f"Error in read file: {e}")
+        raise
+    
+@server.resource("dir://.")    
+async def read_root_dir(ctx:Context):
+    
+    try:
+        path = get_realtive_path(".")
+        
+        if not path.exists():
+            await ctx.warning("error: root path does not exists")
+            return {
+                "error": "root path does not exists"
+            }
+        
+        items = []
+        
+        for item in path.iterdir():
+            
+            status = item.stat()
+            
+            items.append({
+                "name": item.name,
+                "path": str(item.relative_to(base_dir)),
+                "type": "file" if item.is_file() else "directory",
+                "size": status.st_size,
+                "created": datetime.fromtimestamp(status.st_ctime).isoformat(),
+                "modified": datetime.fromtimestamp(status.st_mtime).isoformat()
+            })
+            
+        await ctx.info("root directory read successful")
+        return {
+            "items": items
+        }
+        
+    except Exception as e:
+        await ctx.error(f"Error in read root dir: {e}")
         raise
     
