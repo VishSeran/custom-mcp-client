@@ -59,6 +59,15 @@ async def delete_file(file_path:str, ctx:Context):
             await ctx.info(f"Successfully remove file from path: {file_path}")
             return f"Successfully remove file from path: {file_path}"
         
+        elif path.is_dir():
+            await ctx.warning(f"Warning, path is a directory not a file: {file_path}")
+            return f"Warning, path is a directory not a file: {file_path}"
+        
+        else:
+            await ctx.warning(f"File not found in: {file_path}")
+            return f"File not found in: {file_path}"
+        
+        
     except Exception as e:
         await ctx.error(f"Error in delete file: {e}")
         raise
