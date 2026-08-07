@@ -15,6 +15,7 @@ def get_realtive_path(path:str):
             raise ValueError("path is missing")
         
         file_path = (base_dir/path).resolve()
+        
         file_path.relative_to(base_dir)
         
         return file_path

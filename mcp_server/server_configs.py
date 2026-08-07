@@ -7,6 +7,13 @@ from configurations.config import get_realtive_path
 @server.tool()
 async def write_file(file_path:str,content:str, ctx:Context):
     
+    """
+    Create or overwrite a file with the provided content.
+
+    The parent directories are created automatically if they don't exist.
+    The file is written using UTF-8 encoding.
+    """
+    
     
     try:
         path = get_realtive_path(file_path)
@@ -36,3 +43,22 @@ async def write_file(file_path:str,content:str, ctx:Context):
         await ctx.error(f"Error in write file: {e}")
         raise
     
+    
+@server.tool()
+async def delete_file(file_path:str, ctx:Context):
+    
+    try:
+        
+        path = get_realtive_path(file_path)
+
+        if not path.exists():
+            raise ValueError(f"Path is not exists: {path}")
+        
+        if path.is_file():
+            path.unlink()
+            await ctx.info(f"Successfully remove file from path: {file_path}")
+            return f"Successfully remove file from path: {file_path}"
+        
+    except Exception as e:
+        await ctx.error(f"Error in delete file: {e}")
+        raise
