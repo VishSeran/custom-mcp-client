@@ -148,3 +148,13 @@ async def read_root_dir(ctx:Context):
         await ctx.error(f"Error in read root dir: {e}")
         raise
     
+    
+@server.prompt()
+async def document_generator(ctx:Context):
+    
+    try:
+        
+    except Exception as e:
+        await ctx.error(f"Error in document generator: {e}")
+        raise
+        
