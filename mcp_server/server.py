@@ -23,3 +23,7 @@ class MCPServer:
         except Exception:
             logger.exception("Failed to initialized the MCp server")
             raise
+        
+
+mcp = MCPServer()
+server = mcp.mcp_server
