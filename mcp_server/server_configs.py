@@ -47,6 +47,15 @@ async def write_file(file_path:str,content:str, ctx:Context):
 @server.tool()
 async def delete_file(file_path:str, ctx:Context):
     
+    """
+    Delete a file from a given file path.
+    check whether the path is a file or directory.
+    
+    if path is a file then delete it.
+    if path is a directory returns a warning.
+       
+    """
+    
     try:
         
         path = get_realtive_path(file_path)
@@ -67,7 +76,30 @@ async def delete_file(file_path:str, ctx:Context):
             await ctx.warning(f"File not found in: {file_path}")
             return f"File not found in: {file_path}"
         
-        
+                
     except Exception as e:
         await ctx.error(f"Error in delete file: {e}")
         raise
+    
+@server.resource("file:///{file_name}")  
+async def read_file_from_resources(file_name:str, ctx:Context) -> dict:
+    
+    try:
+        
+        path = get_realtive_path(file_name)
+        
+        if not (path.exists or path.is_file):
+            await ctx.warning(f"Error: file is not exists or path is not a file: {file_name}")
+            return{
+                "error": f"Error: file is not exists or path is not a file: {file_name}"
+            }
+            
+        await ctx.info(f"file fetched: {file_name}")
+        return {
+            "file_content": path.read_text(encoding="utf-8")
+        }
+        
+    except Exception as e:
+        await ctx.error(f"Error in read file: {e}")
+        raise
+    
