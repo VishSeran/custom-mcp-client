@@ -71,3 +71,33 @@ class LLMAgent:
         except Exception as e:
             logger.error(f"Error in llm agent initialization: {e}")
             raise
+        
+        
+    async def get_response(self, query):
+        
+        try:
+            
+            if query is None:
+                raise ValueError("Query is missing")
+            
+            response =  await self.agent.ainvoke({
+                "messages":[{
+                    "role": "user",
+                    "content": query
+                }]
+            })
+            
+            result = response['messages'][-1].content
+            logger.info("Response has fetched successs")
+            
+            return result
+        
+        
+        except ValueError as e:
+            logger.error(f"Value Error in get response: {e}")
+            raise
+            
+        except Exception as e:
+            logger.error(f"Error in llm get response: {e}")
+            raise
+                
