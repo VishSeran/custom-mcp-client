@@ -202,6 +202,10 @@ async def document_generator(ctx:Context) -> str:
     
 async def code_review(ctx:Context) -> str:
     
+    """
+        this function is provided code review operation for a given code file.
+    """
+    
     try:
         
         result = await ctx.elicit(
