@@ -151,7 +151,7 @@ async def read_root_dir(ctx:Context):
     
     
 @server.prompt()
-async def document_generator(ctx:Context):
+async def document_generator(ctx:Context) -> str:
     
     """ Generate documentation according to the given code documentation.
         
@@ -190,7 +190,7 @@ async def document_generator(ctx:Context):
                 Use MCP tools available to you to create the separate documentation file:
                 - **CRITICAL DETAIL: Name that separate document EXACTLY: {file_name}**
                 - Add the .md suffix yourself if the name doesn't include it already
-            """
+            """.strip()
             
         await ctx.info("Prompt is configured")
         return prompt
@@ -198,5 +198,45 @@ async def document_generator(ctx:Context):
         
     except Exception as e:
         await ctx.error(f"Error in document generator: {e}")
+        raise
+    
+async def code_review(ctx:Context) -> str:
+    
+    try:
+        
+        result = await ctx.elicit(
+            message="Please enter the code file name",
+            response_type=DocumentGeneratorSchema
+        )
+        
+        file_path =  result.data.file_path
+        path = get_realtive_path(file_path)
+        
+        if not path.exists() or not path.is_file():
+            await ctx.warning(f"File not found: {file_path}")
+            return f"File not found: {file_path}"
+        
+        code = path.read_text(encoding="utf-8")
+        language = path.suffix.lower()
+        
+        prompt = f"""
+                You are an expert code editor. Review the following code quality.
+                
+                file: {file_path}
+                language: {language or "unknown"}
+                
+                Current code:
+                {code}
+                
+                Provide a comprehensive evaluation of the code:
+                
+        """.strip()
+        
+        await ctx.info("prompt is configured")
+        return prompt
+        
+        
+    except Exception as e:
+        await ctx.error(f"Error in code review: {e}")
         raise
         
