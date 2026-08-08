@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 
 
-class DocumentGenerator(BaseModel):
+class DocumentGeneratorSchema(BaseModel):
     
     file_path: str
     file_name: str

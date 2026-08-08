@@ -2,10 +2,10 @@ from datetime import datetime
 
 from fastmcp import Context
 
+from configurations.config import base_dir, get_realtive_path
 from mcp_server.server import server
-from schema.document import DocumentGenerator
+from schema.document import DocumentGeneratorSchema
 
-from configurations.config import get_realtive_path, base_dir
 
 @server.tool()
 async def write_file(file_path:str,content:str, ctx:Context):
@@ -153,17 +153,47 @@ async def read_root_dir(ctx:Context):
 @server.prompt()
 async def document_generator(ctx:Context):
     
+    """ Generate documentation according to the given code documentation.
+        
+        Reads a code file, elicits a documentation filename from the user,
+        and generate prompt to feed to the chat groq agent to create a comprehensive documentation.
+    """
+    
     try:
         
         result = await ctx.elicit(
             message="Please give the file path and file name",
-            response_type=DocumentGenerator
+            response_type=DocumentGeneratorSchema
         )
         
         file_path = result.data.file_path
         path = get_realtive_path(file_path)
         file_name = result.data.file_name
         
+        code = path.read_text(encoding="utf-8")
+        language = path.suffix.lower()
+        
+        if not path.exists() or not path.is_file():
+            await ctx.warning(f"file not found: {file_path}")
+            return f"file not found: {file_path}"
+        
+        prompt =f"""You are an expert technical writer and documentation specialist. Create documentation for the following code file:
+
+                File: {file_path}
+                Language (file suffix): {language or "unknown"}
+
+                Current code:
+                '''
+                {code}
+                '''
+
+                Use MCP tools available to you to create the separate documentation file:
+                - **CRITICAL DETAIL: Name that separate document EXACTLY: {file_name}**
+                - Add the .md suffix yourself if the name doesn't include it already
+            """
+            
+        await ctx.info("Prompt is configured")
+        return prompt
         
         
     except Exception as e:
