@@ -18,6 +18,7 @@ class MCPClient:
             self.agent = None
             self.client = None
             self.session = None
+            self.server_params = None
             self.exit_stack = AsyncExitStack()
             
         except Exception as e:
@@ -41,6 +42,28 @@ class MCPClient:
                 
             if not server_script_path:
                 raise ValueError("Server script is missing")
+            
+            
+            if server_script_path.endswith((".js", ".py", ".ts")):
+                
+                self.server_params = StdioServerParameters(
+                    command="python",
+                    args=["-m", server_script_path]
+                )
+            
+            elif "." in server_script_path:
+                
+                self.server_params = StdioServerParameters(
+                    command="python",
+                    args=[server_script_path]
+                )
+            
+            else:
+                raise ValueError("server script should be a .js, .ts, or .py file")
+                
+            logger.info("server script fetched success")
+            
+            
             
             
             
