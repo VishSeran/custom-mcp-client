@@ -3,6 +3,8 @@ from contextlib import AsyncExitStack
 
 from mcp.client.stdio import StdioServerParameters, stdio_client 
 from mcp import ClientSession
+from mcp.types import ElicitResult
+
 
 from configurations.logger import get_logger
 
@@ -82,4 +84,34 @@ class MCPClient:
         
         except Exception as e:
             logger.error(f"Error in connect to server: {e}")
+            raise
+        
+    async def elicitation_handler(self, params):
+        
+        try:
+            logger.info(f"Server message: {params.message}")
+            
+            schema = params.requestedSchema
+            
+            user_response = {}
+            
+            for field_name, field_schema in schema['properties'].items():
+                value = input(f"{field_name}: ")
+                
+                if value is None:
+                    return ElicitResult(
+                        action="decline"
+                    )
+                    
+                user_response[field_name] = value
+            
+            logger.info(f"Elicitation response: {user_response}")
+            
+            return ElicitResult(
+                action="accept",
+                content=user_response
+            )
+            
+        except Exception as e:
+            logger.error(f"error in elicitation handler: {e}")
             raise
