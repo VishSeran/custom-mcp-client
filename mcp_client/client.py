@@ -134,3 +134,30 @@ class MCPClient:
         except Exception as e:
             logger.error(f"Error in init agent: {e}")
             raise
+        
+    async def get_agent_response(self, query):
+        
+        try:
+            
+            if self.agent is None:
+                raise RuntimeError("agent is not initialized")
+            
+            if query is None:
+                raise ValueError("query is missing")
+            
+            response = await self.agent.get_response(query)
+            logger.info(f"client llm response is fetched: {response}")
+            return response
+            
+            
+        except RuntimeError as e:
+            logger.error(f"Runtime error: {e}")
+            raise
+        
+        except ValueError as e:
+            logger.error(f"value error: {e}")
+            raise
+            
+        except Exception as e:
+            logger.error(f"Error in get agent response: {e}")
+            raise
