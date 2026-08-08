@@ -16,7 +16,6 @@ class MCPClient:
         try:
             
             self.agent = None
-            self.client = None
             self.session = None
             self.server_params = None
             self.exit_stack = AsyncExitStack()
@@ -29,11 +28,6 @@ class MCPClient:
     async def connect_to_server(self, server_script_path:str):
         
         try:
-            
-            if self.client is not None:
-                raise RuntimeError(
-                    "MCP Client Already Up!!!"
-                )
                 
             if self.session is not None:
                 raise RuntimeError(
@@ -63,14 +57,25 @@ class MCPClient:
                 
             logger.info("server script fetched success")
             
+            read, write = await self.exit_stack.enter_async_context(
+                stdio_client(self.server_params)
+            )
             
+            self.session = await self.exit_stack.enter_async_context(
+                ClientSession(
+                    read, 
+                    write,
+                    client_info={
+                        "name": "enhanced-mcp-client",
+                        "version": "1.0.0"
+                    },
+                    elicitation_callback = self.elicitation_handler
+                )  
+            )
             
-            
-            
-            
-            
-                
-            
+            await self.session.initialize()
+            logger.info("Client session is created")
+ 
         except ValueError as e:
             logger.error(f"Value error in server connection: {e}")
             raise
