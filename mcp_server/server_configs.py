@@ -3,9 +3,12 @@ from datetime import datetime
 from fastmcp import Context
 
 from configurations.config import base_dir, get_realtive_path
+from configurations.logger import get_logger
 from mcp_server.server import server
 from schema.document import DocumentGeneratorSchema
 
+
+logger = get_logger("server-config")
 
 @server.tool()
 async def write_file(file_path:str,content:str, ctx:Context):
@@ -199,7 +202,8 @@ async def document_generator(ctx:Context) -> str:
     except Exception as e:
         await ctx.error(f"Error in document generator: {e}")
         raise
-    
+
+@server.prompt()   
 async def code_review(ctx:Context) -> str:
     
     """
@@ -243,4 +247,8 @@ async def code_review(ctx:Context) -> str:
     except Exception as e:
         await ctx.error(f"Error in code review: {e}")
         raise
+    
+if __name__ == "__main__":
+    logger.info("Starting File Operations Server...")
+    server.run()
         
