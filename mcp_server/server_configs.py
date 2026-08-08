@@ -1,8 +1,14 @@
+from datetime import datetime
+
 from fastmcp import Context
 
+from configurations.config import base_dir, get_realtive_path
+from configurations.logger import get_logger
 from mcp_server.server import server
+from schema.document import DocumentGeneratorSchema
 
-from configurations.config import get_realtive_path
+
+logger = get_logger("server-config")
 
 @server.tool()
 async def write_file(file_path:str,content:str, ctx:Context):
@@ -47,6 +53,15 @@ async def write_file(file_path:str,content:str, ctx:Context):
 @server.tool()
 async def delete_file(file_path:str, ctx:Context):
     
+    """
+    Delete a file from a given file path.
+    check whether the path is a file or directory.
+    
+    if path is a file then delete it.
+    if path is a directory returns a warning.
+       
+    """
+    
     try:
         
         path = get_realtive_path(file_path)
@@ -67,7 +82,173 @@ async def delete_file(file_path:str, ctx:Context):
             await ctx.warning(f"File not found in: {file_path}")
             return f"File not found in: {file_path}"
         
-        
+                
     except Exception as e:
         await ctx.error(f"Error in delete file: {e}")
         raise
+    
+@server.resource("file:///{file_name}")  
+async def read_file_from_resources(file_name:str, ctx:Context) -> dict:
+    
+    """read a file from mcp server resources. this function provides operation to access a paticular file
+    using its path to retrieve its content
+
+    Returns:
+        _type_: _description_
+    """
+    
+    try:
+        
+        path = get_realtive_path(file_name)
+        
+        if not (path.exists or path.is_file):
+            await ctx.warning(f"Error: file is not exists or path is not a file: {file_name}")
+            return{
+                "error": f"Error: file is not exists or path is not a file: {file_name}"
+            }
+            
+        await ctx.info(f"file fetched: {file_name}")
+        return {
+            "file_content": path.read_text(encoding="utf-8")
+        }
+        
+    except Exception as e:
+        await ctx.error(f"Error in read file: {e}")
+        raise
+    
+@server.resource("dir://.")    
+async def read_root_dir(ctx:Context):
+    
+    try:
+        path = get_realtive_path(".")
+        
+        if not path.exists():
+            await ctx.warning("error: root path does not exists")
+            return {
+                "error": "root path does not exists"
+            }
+        
+        items = []
+        
+        for item in path.iterdir():
+            
+            status = item.stat()
+            
+            items.append({
+                "name": item.name,
+                "path": str(item.relative_to(base_dir)),
+                "type": "file" if item.is_file() else "directory",
+                "size": status.st_size,
+                "created": datetime.fromtimestamp(status.st_ctime).isoformat(),
+                "modified": datetime.fromtimestamp(status.st_mtime).isoformat()
+            })
+            
+        await ctx.info("root directory read successful")
+        return {
+            "items": items
+        }
+        
+    except Exception as e:
+        await ctx.error(f"Error in read root dir: {e}")
+        raise
+    
+    
+@server.prompt()
+async def document_generator(ctx:Context) -> str:
+    
+    """ Generate documentation according to the given code documentation.
+        
+        Reads a code file, elicits a documentation filename from the user,
+        and generate prompt to feed to the chat groq agent to create a comprehensive documentation.
+    """
+    
+    try:
+        
+        result = await ctx.elicit(
+            message="Please give the file path and file name",
+            response_type=DocumentGeneratorSchema
+        )
+        
+        file_path = result.data.file_path
+        path = get_realtive_path(file_path)
+        file_name = result.data.file_name
+        
+        code = path.read_text(encoding="utf-8")
+        language = path.suffix.lower()
+        
+        if not path.exists() or not path.is_file():
+            await ctx.warning(f"file not found: {file_path}")
+            return f"file not found: {file_path}"
+        
+        prompt =f"""You are an expert technical writer and documentation specialist. Create documentation for the following code file:
+
+                File: {file_path}
+                Language (file suffix): {language or "unknown"}
+
+                Current code:
+                '''
+                {code}
+                '''
+
+                Use MCP tools available to you to create the separate documentation file:
+                - **CRITICAL DETAIL: Name that separate document EXACTLY: {file_name}**
+                - Add the .md suffix yourself if the name doesn't include it already
+            """.strip()
+            
+        await ctx.info("Prompt is configured")
+        return prompt
+        
+        
+    except Exception as e:
+        await ctx.error(f"Error in document generator: {e}")
+        raise
+
+@server.prompt()   
+async def code_review(ctx:Context) -> str:
+    
+    """
+        this function is provided code review operation for a given code file.
+    """
+    
+    try:
+        
+        result = await ctx.elicit(
+            message="Please enter the code file name",
+            response_type=DocumentGeneratorSchema
+        )
+        
+        file_path =  result.data.file_path
+        path = get_realtive_path(file_path)
+        
+        if not path.exists() or not path.is_file():
+            await ctx.warning(f"File not found: {file_path}")
+            return f"File not found: {file_path}"
+        
+        code = path.read_text(encoding="utf-8")
+        language = path.suffix.lower()
+        
+        prompt = f"""
+                You are an expert code editor. Review the following code quality.
+                
+                file: {file_path}
+                language: {language or "unknown"}
+                
+                Current code:
+                {code}
+                
+                Provide a comprehensive evaluation of the code:
+                
+        """.strip()
+        
+        await ctx.info("prompt is configured")
+        return prompt
+        
+        
+    except Exception as e:
+        await ctx.error(f"Error in code review: {e}")
+        raise
+    
+if __name__ == "__main__":
+    logger.info("Starting File Operations Server...")
+    server.run()
+        
