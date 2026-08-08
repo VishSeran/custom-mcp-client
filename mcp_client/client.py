@@ -1,11 +1,12 @@
 
 from contextlib import AsyncExitStack
 
+from langchain_mcp_adapters.tools import load_mcp_tools
 from mcp.client.stdio import StdioServerParameters, stdio_client 
 from mcp import ClientSession
 from mcp.types import ElicitResult
 
-
+from agents.llm_agent import LLMAgent
 from configurations.logger import get_logger
 
 
@@ -114,4 +115,22 @@ class MCPClient:
             
         except Exception as e:
             logger.error(f"error in elicitation handler: {e}")
+            raise
+        
+    async def init_agent(self):
+        
+        try:
+            if self.agent is not None:
+                raise RuntimeError("Agent already initialized")
+            
+            if self.session is None:
+                raise RuntimeError("Client session is not initialized")
+            
+            tools = await load_mcp_tools(self.session)
+            logger.info("Tools extracted successful")
+            self.agent = LLMAgent(tools=tools)
+            logger.info("Agent run")
+            
+        except Exception as e:
+            logger.error(f"Error in init agent: {e}")
             raise
